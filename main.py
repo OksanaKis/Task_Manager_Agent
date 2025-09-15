@@ -11,19 +11,23 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from langchain.tools import tool 
 
-from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain.agents import create_openai_tools_agent, AgentExecutor 
+
+from todoist_api_python.api import TodoistAPI 
 
 load_dotenv() 
 
 todoist_api_key = os.getenv("TODOIST_API_KEY") 
 gemini_api_key = os.getenv("GEMINI_API_KEY") 
 
+todoist = TodoistAPI(todoist_api_key)
 
 @tool
-def add_task(): 
+def add_task(task, desc=None): 
     """Add a new task to the user's task list. Use this when the user wants to add or create a task"""
-    print("Adding a task") 
-    print("Task added")
+    # print(task) 
+    # print("Task added") 
+    todoist.add_task(content=task, description=desc)
 
 
 tools = [add_task] 
@@ -35,22 +39,30 @@ llm = ChatGoogleGenerativeAI(
 ) 
 
 system_prompt = "You are a helpful assistant. You will help the user add tasks." 
-user_input = "add a new task to buy a milk"
 
 
 prompt = ChatPromptTemplate([
     ("system", system_prompt),
-    ("user", user_input),
+    MessagesPlaceholder("history"),
+    ("user", "{input}"),
     MessagesPlaceholder("agent_scratchpad")]) 
+
 
 
 # chain = prompt | llm | StrOutputParser() 
 agent = create_openai_tools_agent(llm,tools, prompt) 
 
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
 # print(chain) 
 
 # response = chain.invoke({"input": user_input}) 
-response = agent_executor.invoke({"input": user_input})
+# response = agent_executor.invoke({"input": user_input})
 
-print(response['output'])
+history = []
+
+while True: 
+    user_input = input("You: ") 
+    response = agent_executor.invoke({"input": user_input, "history":history}) 
+    print(response['output']) 
+    history.append(HumanMessage(content=user_input)) 
+    history.append(AIMessage(content=response["output"]))
