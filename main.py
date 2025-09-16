@@ -27,7 +27,12 @@ def add_task(task, desc=None):
     """Add a new task to the user's task list. Use this when the user wants to add or create a task"""
     # print(task) 
     # print("Task added") 
-    todoist.add_task(content=task, description=desc)
+    todoist.add_task(content=task, description=desc) 
+
+@tool 
+def show_tasks(): 
+    """Show """
+    return "Here are all tasks"
 
 
 tools = [add_task] 
